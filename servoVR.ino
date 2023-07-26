@@ -2,7 +2,7 @@
 #include <IRremote.hpp>
 
 #define PIN_RECV 2
-
+// #define DEBUG
 Servo passiveServo;
 Servo activeServo;
 
@@ -31,32 +31,38 @@ void loop() {
     previousMillis = currentMillis;
     pS = map(analogRead(passiveServoAnalogOut), 54, 607, 0, 180);
     aS = map(analogRead(activeServoAnalogOut), 54, 607, 0, 180);
-    // Serial.print(pS);
-    // Serial.print(", ");
-    // Serial.println(aS);
+    #ifdef DEBUG
+      Serial.print(pS);
+      Serial.print(", ");
+      Serial.println(aS);
+    #endif
 
     if (abs(pS - aS) > 4) {
       activeServo.attach(11);
       reversePos ? activeServo.write(180 - pS) : activeServo.write(pS);
-      // activeServo.write(pS);
     } else {
       activeServo.detach();
     }
   }
 
   if (IrReceiver.decode()) {
-    // Serial.println("Received something...");
-    // IrReceiver.printIRResultShort(&Serial); // Prints a summary of the received data
-    // Serial.println();
-    // Serial.println(IrReceiver.decodedIRData.address);
-    // Serial.println(IrReceiver.decodedIRData.command);
+    #ifdef DEBUG
+      IrReceiver.printIRResultShort(&Serial); // Prints a summary of the received data
+      Serial.println();
+      Serial.println(IrReceiver.decodedIRData.address);
+      Serial.println(IrReceiver.decodedIRData.command);
+    #endif
     int prePassivePos = map(analogRead(passiveServoAnalogOut), 54, 607, 0, 180);
     int preActivePos = map(analogRead(activeServoAnalogOut), 54, 607, 0, 180);
     if (IrReceiver.decodedIRData.address == 0 && IrReceiver.decodedIRData.command == 24 && prePassivePos < 176) {
-      Serial.println("V+");
+      #ifdef DEBUG
+        Serial.println("V+");
+      #endif
       remoteMove(prePassivePos, prePassivePos + 5);
     } else if (IrReceiver.decodedIRData.address == 0 && IrReceiver.decodedIRData.command == 82 && prePassivePos > 4) {
-      Serial.println("V-");
+      #ifdef DEBUG
+        Serial.println("V-");
+      #endif
       remoteMove(prePassivePos, prePassivePos - 5);
     }
     IrReceiver.resume();  // Important, enables to receive the next IR signal
@@ -85,7 +91,6 @@ void loop() {
 void remoteMove(int prePost, int targetPos) {
   passiveServo.attach(12);
   activeServo.attach(11);
-  // prePost = map(analogRead(passiveServoAnalogOut), 54, 607, 0, 180);
   if (targetPos > prePost) {
     for (int i = prePost; i < targetPos; i++) {
       passiveServo.write(i);
